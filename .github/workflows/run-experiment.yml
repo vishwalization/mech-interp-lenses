@@ -38,7 +38,7 @@ jobs:
         if: steps.detect.outputs.exp != ''
         shell: bash
         run: |
-          source /workspace/venv/bin/activate
+          source /workspace/venv-mech/bin/activate
           export PYTHONPATH="$PWD"
           EXP="${{ steps.detect.outputs.exp }}"
           OUT="/workspace/results/$EXP"
