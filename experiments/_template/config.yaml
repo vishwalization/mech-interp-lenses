@@ -1,0 +1,8 @@
+name: _template
+model: flux2-klein-4b
+helper_model: qwen
+method: diffusion_lens          # or logit_lens / j_matrix
+prompt: "a red apple on a wooden table"
+steps: 30
+seed: 42
+save_attention: true

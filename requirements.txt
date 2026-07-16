@@ -1,0 +1,8 @@
+torch
+diffusers
+transformers
+accelerate
+pyyaml
+safetensors
+Pillow
+matplotlib

@@ -1,0 +1,48 @@
+name: Run Experiment
+
+on:
+  push:
+    paths:
+      - 'experiments/**'
+
+# Only one GPU job at a time, so two pushes don't fight over the GPU
+concurrency:
+  group: gpu-runner
+  cancel-in-progress: false
+
+jobs:
+  run-experiment:
+    runs-on: [self-hosted, runpod-gpu]
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Figure out which experiment changed
+        id: detect
+        shell: bash
+        run: |
+          BEFORE="${{ github.event.before }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || [ -z "$BEFORE" ]; then
+            FILES=$(git show --name-only --pretty="" HEAD)
+          else
+            FILES=$(git diff --name-only "$BEFORE" "${{ github.sha }}")
+          fi
+          EXP=$(echo "$FILES" | grep '^experiments/' | grep -v '^experiments/_template' \
+                | cut -d/ -f2 | sort -u | head -n1)
+          echo "Detected experiment: $EXP"
+          echo "exp=$EXP" >> "$GITHUB_OUTPUT"
+
+      - name: Run it on the GPU
+        if: steps.detect.outputs.exp != ''
+        shell: bash
+        run: |
+          source /workspace/venv/bin/activate
+          export PYTHONPATH="$PWD"
+          EXP="${{ steps.detect.outputs.exp }}"
+          OUT="/workspace/results/$EXP"
+          mkdir -p "$OUT" /workspace/logs
+          python "experiments/$EXP/run.py" \
+            --config "experiments/$EXP/config.yaml" \
+            --output "$OUT" 2>&1 | tee "/workspace/logs/$EXP.log"
