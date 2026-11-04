@@ -5,19 +5,23 @@ __pycache__/
 dist/
 build/
 *.egg
+.pytest_cache/
+.ruff_cache/
+
+# Notebooks are deliberately not part of this repo — scripts/ are the source of truth
+*.ipynb
+.ipynb_checkpoints/
 
 # Virtual environments
 venv/
 .venv/
 env/
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db
 
@@ -25,5 +29,11 @@ Thumbs.db
 .env
 *.key
 
-# Results (stored on RunPod volume, not in git)
-results/
+# Results (images, JSON, logs) live on the GPU box, not in git.
+# Curated figures for the README are copied into assets/.
+results/*
+!results/.gitkeep
+
+# Model/lens checkpoints
+*.pt
+*.safetensors

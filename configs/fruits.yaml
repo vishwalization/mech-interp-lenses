@@ -1,0 +1,30 @@
+# Easy → hard fruits. The first prompt family used in the project.
+name: fruits
+concept_label: fruit
+fallback_word: fruit
+easy_count: 5
+
+prompts:
+  - "an apple over a white table"
+  - "a banana over a white table"
+  - "an orange over a white table"
+  - "a strawberry over a white table"
+  - "a grape over a white table"
+  - "a rambutan over a white table"
+  - "a mangosteen over a white table"
+  - "a durian over a white table"
+  - "a cherimoya over a white table"
+  - "a jabuticaba over a white table"
+
+position: last
+layer_stride: 3
+topk: 5
+prob_thresh: 0.05
+rank_thresh: 50
+
+generation:
+  seed: 42
+  height: 512
+  width: 512
+  num_inference_steps: 4
+  guidance_scale: 1.0

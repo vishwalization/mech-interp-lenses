@@ -1,0 +1,23 @@
+# Long scene prompts for the layer-combination ablation (scripts/run_layer_ablation.py).
+# `items` are given explicitly because these prompts don't follow the "a X over a table" template.
+name: scenes
+easy_count: 4
+
+prompts:
+  - "A spaceship parked near a vegetable shop in desert"
+  - "A floating Japanese temple above a sea of cherry blossoms at sunset, with a giant glowing koi fish swimming through the clouds, soft golden light, in the style of Makoto Shinkai, cinematic atmosphere, highly detailed"
+  - "A giant whale swimming through clouds above a quiet village at sunrise, with people on rooftops looking up, soft golden light, dreamy and surreal atmosphere, highly detailed"
+  - "A cyberpunk samurai standing in a rainy neon Tokyo street at night, glowing katana in hand, reflections on wet ground, flying cars in the background, in the style of Blade Runner, cinematic lighting, highly detailed"
+
+items:
+  - spaceship
+  - temple
+  - whale
+  - samurai
+
+generation:
+  seed: 42
+  height: 512
+  width: 512
+  num_inference_steps: 4
+  guidance_scale: 1.0

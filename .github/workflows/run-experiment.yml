@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'experiments/**'
+      - '!experiments/_template/**'   # editing the scaffold should not wake the GPU
 
 # Only one GPU job at a time, so two pushes don't fight over the GPU
 concurrency:
@@ -41,7 +42,7 @@ jobs:
         shell: bash
         run: |
           source /workspace/venv-mech/bin/activate
-          export PYTHONPATH="$PWD"
+          export PYTHONPATH="$PWD/src:$PWD"
           EXP="${{ steps.detect.outputs.exp }}"
           OUT="/workspace/results/$EXP"
           mkdir -p "$OUT" /workspace/logs

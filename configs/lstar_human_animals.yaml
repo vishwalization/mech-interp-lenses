@@ -1,0 +1,18 @@
+# Earliest depth at which the object is *clearly* the named animal in the
+# pure-(L,L,L) diffusion-lens grid (stride 3, seed 42). `null` = never clearly present.
+#
+# PROVISIONAL — a first-pass reading of assets/diffusion_lens_grid_animals.jpg.
+# Re-check against the grid before using these numbers in a claim.
+#
+# Pass to:  scripts/run_diffusion_lens.py --lstar-human configs/lstar_human_animals.yaml
+#      or:  scripts/run_token_cards.py --manual <file with {item: {Lstar_diff: N}}>
+dog: 15
+cat: 15
+bird: 27
+fish: 15
+rat: 24
+axolotl: 18        # salamander-like from L18; identity never fully locks
+quokka: 21         # generic rodent/marsupial — closest at L21–L30
+platypus: null     # seal / blob / shell, never a platypus
+okapi: null        # rhino → tapir → donkey-like with stripes at L27–L30, never an okapi
+pangolin: 30       # armadillo/hedgehog → scaled, curled animal by L30

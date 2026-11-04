@@ -1,0 +1,31 @@
+# Easy → hard animals. Easy = common, single BPE token. Hard = rare, multi-piece.
+# Items are parsed from the prompts ("a quokka over a white table" → "quokka").
+name: animals
+concept_label: animal
+fallback_word: animal          # category token used for items with no token of their own
+easy_count: 5
+
+prompts:
+  - "a dog over a white table"
+  - "a cat over a white table"
+  - "a bird over a white table"
+  - "a fish over a white table"
+  - "a rat over a white table"
+  - "an axolotl over a white table"
+  - "a quokka over a white table"
+  - "a platypus over a white table"
+  - "an okapi over a white table"
+  - "a pangolin over a white table"
+
+position: last                 # read the residual at the last sub-token of the item
+layer_stride: 3                # diffusion lens: depths 0,3,6,…,36
+topk: 5
+prob_thresh: 0.05              # L* = first layer with P(target) ≥ this …
+rank_thresh: 50                #       … or best variant ranked within this
+
+generation:
+  seed: 42
+  height: 512
+  width: 512
+  num_inference_steps: 4       # Klein is a few-step model
+  guidance_scale: 1.0

@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mech-interp-lenses"
+version = "0.1.0"
+description = "Logit, diffusion and Jacobian lenses on the Qwen3 text encoder inside FLUX.2 Klein 4B"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "A.K. Vishwanathan" }]
+keywords = ["mechanistic-interpretability", "diffusion", "logit-lens", "text-to-image", "flux"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.4",
+    "diffusers>=0.33",
+    "transformers>=4.51",
+    "accelerate>=1.3",
+    "huggingface_hub",
+    "hf_transfer",
+    "safetensors",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "Pillow",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+clip = ["open_clip_torch"]
+jlens = ["jlens @ git+https://github.com/anthropics/jacobian-lens.git"]
+dev = ["pytest", "ruff"]
+
+[project.urls]
+Repository = "https://github.com/vishwalization/mech-interp-lenses"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

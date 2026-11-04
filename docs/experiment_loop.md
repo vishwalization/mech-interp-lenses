@@ -1,4 +1,6 @@
-# Automated Experiment Loop — Full Setup Guide (in plain words)
+# Push-to-run GPU loop — setup guide
+
+> Original planning notes for the RunPod + GitHub Actions loop. Paths and names below match this repo's `.github/workflows/run-experiment.yml`.
 
 This guide turns your 11-step table into a working system. Once it's set up, your daily
 routine becomes:
@@ -69,8 +71,8 @@ Put the environment on `/workspace` so it survives pod restarts.
 
 ```bash
 cd /workspace
-python -m venv venv
-source venv/bin/activate
+python -m venv venv-mech
+source venv-mech/bin/activate
 pip install -r /workspace/<your-repo>/requirements.txt   # torch, diffusers, transformers, pyyaml, etc.
 mkdir -p /workspace/results /workspace/logs
 ```
@@ -112,7 +114,7 @@ reattach and start the runner again:
 
 ```bash
 tmux new -s runner
-cd /workspace/actions-runner && source /workspace/venv/bin/activate && ./run.sh
+cd /workspace/actions-runner && source /workspace/venv-mech/bin/activate && ./run.sh
 ```
 
 (You can automate this with a RunPod **start command / startup script** so it happens on its
@@ -127,23 +129,16 @@ This is Steps 3–4 and 7 in your table. Do this on your laptop in Cursor.
 ### B1. Use a clear folder layout
 
 ```
-your-research-repo/
-├── .github/
-│   └── workflows/
-│       └── run-experiment.yml      # the automation rule (Part C)
+mech-interp-lenses/
+├── .github/workflows/run-experiment.yml   # the automation rule (Part C)
 ├── experiments/
-│   ├── _template/                  # copy this to start a new experiment
-│   │   ├── config.yaml
-│   │   └── run.py
-│   └── exp005_diffusion_lens/      # one folder per experiment
-│       ├── config.yaml
-│       └── run.py
-├── src/                            # your reusable model code
-│   ├── diffusion_lens.py
-│   ├── logit_lens.py
-│   └── j_matrix.py
-├── scripts/
-│   └── new_experiment.sh
+│   ├── _template/                         # copy this to start a new experiment
+│   │   ├── config.yaml                    #   lens config + `method:` key
+│   │   └── run.py                         #   dispatches to scripts/run_<method>.py
+│   └── exp005_diffusion_lens/             # one folder per experiment
+├── src/lenses/                            # the reusable lens code (see README)
+├── scripts/run_*.py                       # one CLI per lens
+├── scripts/new_experiment.sh
 ├── requirements.txt
 └── README.md
 ```
@@ -153,82 +148,24 @@ under `experiments/` is what will trigger a run.
 
 ### B2. An experiment's config file (`config.yaml`)
 
-This is where you describe the experiment in a machine-readable way. It matches your
-example ("red apple, save attention maps").
+The config is an ordinary lens config (same schema as `configs/*.yaml`) plus a
+`method:` key naming the script to run and an optional `args:` list of extra
+flags. See `experiments/_template/config.yaml`.
 
 ```yaml
 name: exp005_diffusion_lens
-model: flux2-klein-4b
-helper_model: qwen
-method: diffusion_lens          # or logit_lens / j_matrix
-prompt: "a red apple on a wooden table"
-steps: 30
-seed: 42
-save_attention: true
+method: diffusion_lens         # logit_lens | emergence_curve | diffusion_lens | j_lens | token_cards | layer_ablation
+args: ["--stride", "2"]
+prompts: [...]
+generation: {seed: 42, num_inference_steps: 4}
 ```
 
-### B3. The experiment runner script (`run.py`)
+### B3. The experiment runner (`run.py`)
 
-This template does the boring-but-important parts: makes the output folders, logs
-everything (so logs show up both on the volume *and* in GitHub Actions), runs your code,
-and saves results. You only fill in the "load your models" part.
-
-```python
-# experiments/_template/run.py
-import argparse, os, json, logging, sys
-from datetime import datetime
-
-def setup_logging(output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-        handlers=[
-            logging.FileHandler(os.path.join(output_dir, "run.log")),  # saved to volume
-            logging.StreamHandler(sys.stdout),                         # shown in GitHub Actions
-        ],
-    )
-    return logging.getLogger("experiment")
-
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", required=True)
-    p.add_argument("--output", required=True)   # e.g. /workspace/results/exp005_diffusion_lens
-    args = p.parse_args()
-
-    # 1) Make output folders
-    os.makedirs(os.path.join(args.output, "images"), exist_ok=True)
-    os.makedirs(os.path.join(args.output, "attention_maps"), exist_ok=True)
-    log = setup_logging(args.output)
-    log.info("Starting experiment -> %s", args.output)
-
-    # 2) Read config
-    import yaml
-    with open(args.config) as f:
-        config = yaml.safe_load(f)
-    log.info("Config: %s", config)
-
-    # 3) === YOUR CODE HERE ===
-    # from src.diffusion_lens import run_diffusion_lens
-    # images, attention_maps, metrics = run_diffusion_lens(config)
-    # save each image to args.output/images/, each map to args.output/attention_maps/
-    # (this is where FLUX.2 Klein + Qwen actually run on the GPU)
-
-    # 4) Save a metrics summary
-    metrics = {
-        "name": config.get("name"),
-        "prompt": config.get("prompt"),
-        "status": "ok",
-        "finished_at": datetime.utcnow().isoformat(),
-    }
-    with open(os.path.join(args.output, "metrics.json"), "w") as f:
-        json.dump(metrics, f, indent=2)
-
-    log.info("Done. Everything saved to %s", args.output)
-
-if __name__ == "__main__":
-    main()
-```
+`experiments/_template/run.py` reads `method`, runs
+`scripts/run_<method>.py --config <config> --results-dir <output>` and writes
+`metrics.json` with status and timing. You normally don't edit it — put new
+behaviour in `src/lenses/` and `scripts/`.
 
 ### B4. A helper to start a new experiment quickly (`scripts/new_experiment.sh`)
 
@@ -293,8 +230,8 @@ jobs:
         if: steps.detect.outputs.exp != ''
         shell: bash
         run: |
-          source /workspace/venv/bin/activate
-          export PYTHONPATH="$PWD"                 # so `from src...` works
+          source /workspace/venv-mech/bin/activate
+          export PYTHONPATH="$PWD/src:$PWD"              # so `from src...` works
           EXP="${{ steps.detect.outputs.exp }}"
           OUT="/workspace/results/$EXP"
           mkdir -p "$OUT" /workspace/logs
